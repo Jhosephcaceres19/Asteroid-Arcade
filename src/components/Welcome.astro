@@ -2,13 +2,95 @@
 import "../styles/global.css";
 ---
 
-<div class="px-100 bg-linear-to-r from-cyan-500 to-blue-500 text-center h-full">
-  <div class="bg-sky-100 h-full">
-    <h1 class="text-8xl font-bold text-sky-600 pt-16">ASTEROIDS</h1>
+<div class="">
+  <div id="tsparticles"></div>
 
-    <div class="pt-18 flex flex-col">
-      <a href="" class="text-5xl">PLAY GAME</a>
-      <a href="" class="text-5xl">HIGH SCORES</a>
+  <div class="relative z-10 h-screen flex items-center justify-center">
+    <div class="px-100 text-center text-white">
+      <h1 class="text-8xl font-bold text-cyan-400">ASTEROIDS</h1>
+
+      <div class="mt-10 flex flex-col gap-6">
+        <a href="/form" class="text-4xl hover:text-cyan-300 transition">PLAY GAME</a
+        >
+        <a href="#" class="text-4xl hover:text-cyan-300 transition"
+          >HIGH SCORES</a
+        >
+      </div>
     </div>
   </div>
 </div>
+
+<script
+  src="https://cdn.jsdelivr.net/npm/tsparticles@2/tsparticles.bundle.min.js"
+></script>
+
+<script>
+  declare global {
+    interface Window {
+      tsParticles: any;
+    }
+  }
+</script>
+
+<script>
+  window.addEventListener("load", () => {
+    window.tsParticles.load("tsparticles", {
+      fullScreen: { enable: true, zIndex: -1 },
+
+      background: {
+        color: "#0d0d0d",
+      },
+
+      particles: {
+        number: { value: 60 },
+
+        color: { value: "#00ffff" },
+
+        opacity: {
+          value: 0.6,
+          random: true,
+        },
+
+        size: {
+          value: { min: 1, max: 3 },
+        },
+
+        move: {
+          enable: true,
+          speed: 1,
+        },
+
+        links: {
+          enable: true,
+          color: "#00ffff",
+          distance: 150,
+          opacity: 0.4,
+          width: 1,
+        },
+
+        shadow: {
+          enable: true,
+          color: "#00ffff",
+          blur: 10,
+        },
+      },
+
+      interactivity: {
+        events: {
+          onHover: {
+            enable: true,
+            mode: "grab",
+          },
+        },
+        modes: {
+          grab: {
+            distance: 200,
+            links: {
+              opacity: 1,
+            },
+          },
+        },
+      },
+    });
+  });
+</script>
