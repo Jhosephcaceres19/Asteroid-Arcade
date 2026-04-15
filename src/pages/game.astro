@@ -1,0 +1,284 @@
+---
+import "../styles/global.css";
+import Image from "astro/components/Image.astro";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div class="relative z-10 flex items-center justify-center h-screen">
+      <div
+        class="bg-sky-800 backdrop-blur-md p-10 rounded-2xl shadow-xl w-200 h-200 flex flex-col justify-between"
+      >
+        <h1
+          id="nicknameDisplay"
+          class="text-2xl bg-sky-200 text-center rounded-lg py-2"
+        >
+          Campo de juego
+        </h1>
+
+        <canvas
+          id="gameCanvas"
+          width="600"
+          height="400"
+          class="bg-amber-300 rounded-lg"
+        >
+        </canvas>
+
+        <a
+          href="/"
+          class="mt-4 bg-cyan-500 hover:bg-red-500 text-center text-black hover:text-white font-bold py-2 rounded-lg transition"
+        >
+          Terminar Juego
+        </a>
+      </div>
+    </div>
+  </body>
+</html>
+
+<script
+  src="https://cdn.jsdelivr.net/npm/tsparticles@2/tsparticles.bundle.min.js"
+></script>
+
+<script>
+  declare global {
+    interface Window {
+      tsParticles: any;
+    }
+  }
+</script>
+
+<script>
+  window.addEventListener("load", () => {
+    window.tsParticles.load("tsparticles", {
+      fullScreen: { enable: true, zIndex: -1 },
+
+      background: {
+        color: "#0d0d0d",
+      },
+
+      particles: {
+        number: { value: 60 },
+
+        color: { value: "#00ffff" },
+
+        opacity: {
+          value: 0.6,
+          random: true,
+        },
+
+        size: {
+          value: { min: 1, max: 3 },
+        },
+
+        move: {
+          enable: true,
+          speed: 1,
+        },
+
+        links: {
+          enable: true,
+          color: "#00ffff",
+          distance: 150,
+          opacity: 0.4,
+          width: 1,
+        },
+
+        shadow: {
+          enable: true,
+          color: "#00ffff",
+          blur: 10,
+        },
+      },
+
+      interactivity: {
+        events: {
+          onHover: {
+            enable: true,
+            mode: "grab",
+          },
+        },
+        modes: {
+          grab: {
+            distance: 200,
+            links: {
+              opacity: 1,
+            },
+          },
+        },
+      },
+    });
+  });
+</script>
+
+<script type="module">
+  import PouchDB from "https://cdn.jsdelivr.net/npm/pouchdb-browser@8.0.1/+esm";
+
+  const db = new PouchDB("usuarios");
+
+  const title = document.getElementById("nicknameDisplay");
+
+  async function cargarUsuario() {
+    try {
+      const res = await db.allDocs({ include_docs: true });
+
+      const docs = res.rows.map((r) => r.doc);
+
+      if (docs.length > 0) {
+        const ultimo = docs[docs.length - 1];
+
+        title.textContent = `Bienvenido ${ultimo.nickname} 🎮`;
+      } else {
+        title.textContent = "No hay usuario";
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  cargarUsuario();
+</script>
+
+<script>
+  window.addEventListener("DOMContentLoaded", () => {
+    const canvas = document.getElementById("gameCanvas") as HTMLCanvasElement;
+
+    const ctx = canvas.getContext("2d")!;
+
+    // 🎮 PLAYER
+    const player = {
+      x: canvas.width / 2,
+      y: canvas.height - 40,
+      size: 35,
+      speed: 10,
+    };
+
+    // 🔫 TIPOS
+    type Bullet = {
+      x: number;
+      y: number;
+      size: number;
+      speed: number;
+    };
+
+    type Asteroid = {
+      x: number;
+      y: number;
+      size: number;
+      speed: number;
+    };
+
+    let bullets: Bullet[] = [];
+    let asteroids: Asteroid[] = [];
+    let keys: Record<string, boolean> = {};
+
+    // 🎯 CONTROLES
+    document.addEventListener("keydown", (e: KeyboardEvent) => {
+      keys[e.key] = true;
+
+      if (e.key.toLowerCase() === "a") {
+        bullets.push({
+          x: player.x + player.size / 2,
+          y: player.y,
+          size: 5,
+          speed: 7,
+        });
+      }
+    });
+
+    document.addEventListener("keyup", (e: KeyboardEvent) => {
+      keys[e.key] = false;
+    });
+
+    // ☄️ ASTEROIDES
+    function spawnAsteroid() {
+      asteroids.push({
+        x: Math.random() * canvas.width,
+        y: 0,
+        size: 15 + Math.random() * 15,
+        speed: 2 + Math.random() * 2,
+      });
+    }
+
+    setInterval(spawnAsteroid, 1000);
+
+    // 🎮 LOOP
+    function gameLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // mover player
+      if (keys["ArrowLeft"]) player.x -= player.speed;
+      if (keys["ArrowRight"]) player.x += player.speed;
+      if (keys["ArrowUp"]) player.y -= player.speed;
+      if (keys["ArrowDown"]) player.y += player.speed;
+
+      // límites
+      player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
+      player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
+
+      // dibujar player
+
+      const shipImg = new Image();
+      shipImg.src = "../../public/cohete.png";
+
+      // ctx.fillStyle = "cyan";
+      // ctx.fillRect(player.x, player.y, player.size, player.size);
+      ctx.drawImage(shipImg, player.x, player.y, player.size, player.size);
+
+      // balas
+      bullets = bullets.filter((b) => b.y > 0);
+      bullets.forEach((b) => {
+        b.y -= b.speed;
+        ctx.fillStyle = "red";
+        ctx.fillRect(b.x, b.y, b.size, b.size);
+      });
+
+      // asteroides
+      asteroids = asteroids.filter((a) => a.y < canvas.height);
+      asteroids.forEach((a, ai) => {
+        a.y += a.speed;
+
+        const asteroidImg = new window.Image();
+        asteroidImg.src = "../../public/asteroide.png";
+        let asteroidLoaded = false;
+
+        asteroidImg.onload = () => {
+          asteroidLoaded = true;
+        };
+
+        // ctx.fillStyle = "gray";
+        // ctx.beginPath();
+        // ctx.arc(a.x, a.y, a.size, 0, Math.PI * 2);
+        // ctx.fill();
+        ctx.save();
+
+        ctx.translate(a.x, a.y);
+        ctx.rotate(Date.now() / 1000); // rotación simple
+
+        ctx.drawImage(asteroidImg, -a.size, -a.size, a.size * 2, a.size * 2);
+
+        ctx.restore();
+        // colisión
+        bullets.forEach((b, bi) => {
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < a.size) {
+            asteroids.splice(ai, 1);
+            bullets.splice(bi, 1);
+          }
+        });
+      });
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+  });
+</script>
